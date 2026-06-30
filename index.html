@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TableMaster Web</title>
+<link rel="stylesheet" href="static/css/app.css">
+</head>
+<body>
+
+<header class="app-header">
+  <h1>TableMaster Web</h1>
+  <p>Crystal data and refinement details table from up to 5 CIF files — runs entirely in your browser, nothing is uploaded anywhere.</p>
+</header>
+
+<main>
+
+  <section class="panel">
+    <h2>Load</h2>
+    <div class="row load-row" id="load-row">
+      <div class="slot" id="slot-1" tabindex="0">
+        <button class="slot-clear hidden" id="slot-clear-1" title="Clear this slot">×</button>
+        <span class="slot-label" id="load-cif-1">Load CIF 1</span>
+        <span class="slot-hint">click or drop .cif</span>
+      </div>
+      <div class="slot is-disabled" id="slot-2" tabindex="0">
+        <button class="slot-clear hidden" id="slot-clear-2" title="Clear this slot">×</button>
+        <span class="slot-label" id="load-cif-2">Load CIF 2</span>
+        <span class="slot-hint">click or drop .cif</span>
+      </div>
+      <div class="slot is-disabled" id="slot-3" tabindex="0">
+        <button class="slot-clear hidden" id="slot-clear-3" title="Clear this slot">×</button>
+        <span class="slot-label" id="load-cif-3">Load CIF 3</span>
+        <span class="slot-hint">click or drop .cif</span>
+      </div>
+      <div class="slot is-disabled" id="slot-4" tabindex="0">
+        <button class="slot-clear hidden" id="slot-clear-4" title="Clear this slot">×</button>
+        <span class="slot-label" id="load-cif-4">Load CIF 4</span>
+        <span class="slot-hint">click or drop .cif</span>
+      </div>
+      <div class="slot is-disabled" id="slot-5" tabindex="0">
+        <button class="slot-clear hidden" id="slot-clear-5" title="Clear this slot">×</button>
+        <span class="slot-label" id="load-cif-5">Load CIF 5</span>
+        <span class="slot-hint">click or drop .cif</span>
+      </div>
+      <button id="clear-all" disabled>Clear all</button>
+    </div>
+    <input type="file" id="file-input-1" accept=".cif" class="hidden">
+    <input type="file" id="file-input-2" accept=".cif" class="hidden">
+    <input type="file" id="file-input-3" accept=".cif" class="hidden">
+    <input type="file" id="file-input-4" accept=".cif" class="hidden">
+    <input type="file" id="file-input-5" accept=".cif" class="hidden">
+  </section>
+
+  <section class="panel">
+    <h2>Options</h2>
+    <div class="row" style="justify-content: space-between;">
+      <div class="option-group">
+        <span class="option-group-title">Table content</span>
+        <div class="row option-row">
+          <label><input type="checkbox" id="opt-include-temperature"> Include temperature</label>
+          <label><input type="checkbox" id="opt-include-moiety"> Include moiety formula</label>
+          <label><input type="checkbox" id="opt-si-units"> SI-style units (/Å instead of [Å])</label>
+        </div>
+      </div>
+      <div class="option-group">
+        <span class="option-group-title">RTF page format</span>
+        <div class="row option-row">
+          <label><input type="radio" name="orientation" id="opt-orientation-auto"> A4 Auto</label>
+          <label><input type="radio" name="orientation" id="opt-orientation-portrait"> A4 Portrait</label>
+          <label><input type="radio" name="orientation" id="opt-orientation-landscape"> A4 Landscape</label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="warnings-box" class="hidden"></div>
+
+  <section class="panel">
+    <h2>Preview</h2>
+    <div id="report-preview" class="report-preview">
+      <p class="empty-hint">Load at least one CIF file to see a preview here.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Copy</h2>
+    <div class="row">
+      <button id="btn-copy-formatted" disabled>Copy formatted (for Word etc.)</button>
+      <button id="btn-copy-md" disabled>Copy Markdown</button>
+      <button id="btn-copy-text" disabled>Copy plain text</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Save</h2>
+    <div class="row">
+      <button id="btn-download-rtf" disabled>Save RTF</button>
+      <button id="btn-download-html" disabled>Save HTML</button>
+      <button id="btn-download-md" disabled>Save Markdown</button>
+      <button id="btn-download-text" disabled>Save plain text</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>TableMaster Web &middot; JS port of TableMasterG2 &middot; runs from file:// — no server, no upload</footer>
+
+<div id="toast" class="toast"></div>
+
+<script src="static/js/parser.js"></script>
+<script src="static/js/format-helpers.js"></script>
+<script src="static/js/cif-store.js"></script>
+<script src="static/js/table-model.js"></script>
+<script src="static/js/formatters.js"></script>
+<script src="static/js/app.js"></script>
+</body>
+</html>
