@@ -281,7 +281,16 @@
       var structureBlocks = (parsed.blocks || []).filter(window.CIFLord.Parser.looksLikeStructureBlock);
 
       if (structureBlocks.length <= 1) {
-        var slot = Store.loadIntoSlot(store, startIndex, file.name, text);
+        var slot = Store.loadParsedIntoSlot(store, startIndex, file.name, parsed);
+
+        // In this branch there was at most one real structure block, so any
+        // "multiple data_ blocks ignored" warning from the parser refers
+        // only to non-structure blocks (e.g. data_global) — not an actual
+        // ambiguity the user needs to know about. Drop it to avoid a
+        // misleading warning right after a perfectly unambiguous load.
+        slot.warnings = (slot.warnings || []).filter(function (w) {
+          return w.indexOf("Multiple data_ blocks found") !== 0;
+        });
 
         if (!slot.dataName) {
           showToast("No 'data_' block found in " + file.name, "warning");
@@ -296,6 +305,15 @@
 
       // Multiple structures in this one file: let the user pick which ones
       // and how many, capped at the number of currently free slots.
+      if (blockPicker.resolve) {
+        // Extremely unlikely (would need two drops racing each other), but
+        // guard against silently overwriting an already-open picker's
+        // resolver, which would leave the first selection unresolved.
+        showToast("Finish the current structure selection first", "warning");
+        done();
+        return;
+      }
+
       var freeSlots = freeSlotIndicesFrom(startIndex);
 
       askUserToPickBlocks(structureBlocks, freeSlots.length).then(function (chosenIndices) {

@@ -30,7 +30,13 @@
 
   function loadIntoSlot(store, slotIndex, fileName, text) {
     var parsed = window.CIFLord.Parser.parse(text);
+    return loadParsedIntoSlot(store, slotIndex, fileName, parsed);
+  }
 
+  // Same as loadIntoSlot, but takes an already-parsed result so callers
+  // that had to parse the file anyway (e.g. to count structure blocks)
+  // don't have to parse it a second time.
+  function loadParsedIntoSlot(store, slotIndex, fileName, parsed) {
     var slot = {
       loaded: true,
       fileName: fileName,
@@ -87,6 +93,7 @@
     MAX_SLOTS: MAX_SLOTS,
     createStore: createStore,
     loadIntoSlot: loadIntoSlot,
+    loadParsedIntoSlot: loadParsedIntoSlot,
     loadBlockIntoSlot: loadBlockIntoSlot,
     clearSlot: clearSlot,
     clearAll: clearAll,
