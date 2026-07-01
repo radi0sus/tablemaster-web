@@ -132,6 +132,23 @@
       .replace(/<[^>]+>/g, "");
   }
 
+  // Converts the small subset of HTML used in this tool's cells
+  // (<i>, <sub>, <sup>, <b>, <strong>) into Markdown inline syntax.
+  // <sub>/<sup> have no portable Markdown equivalent, so those are
+  // flattened to plain text (matching stripHtml's behaviour there).
+  function htmlToMarkdown(html) {
+    return String(html || "")
+      .replace(/<sub>(.*?)<\/sub>/g, "$1")
+      .replace(/<sup>(.*?)<\/sup>/g, "$1")
+      .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
+      .replace(/<b>(.*?)<\/b>/g, "**$1**")
+      .replace(/<i>(.*?)<\/i>/g, "*$1*")
+      .replace(/&gt;/g, ">")
+      .replace(/&lt;/g, "<")
+      .replace(/&amp;/g, "&")
+      .replace(/<[^>]+>/g, "");
+  }
+
   function decodeBasicEntities(str) {
     return String(str || "")
       .replace(/&amp;/g, "&")
@@ -309,6 +326,7 @@
     formatFormulaText: formatFormulaText,
     formatSpaceGroupHtml: formatSpaceGroupHtml,
     stripHtml: stripHtml,
+    htmlToMarkdown: htmlToMarkdown,
     decodeBasicEntities: decodeBasicEntities,
     withUnit: withUnit,
     rtfEscape: rtfEscape,

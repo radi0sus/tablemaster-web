@@ -14,11 +14,36 @@
   --error-bg: #fdecec;
   --error-border: #e0524a;
 
-  --table-head: #f3f4f6;
+  --table-bg: #ffffff;
   --radius: 9px;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 
-  color-scheme: light;
+  color-scheme: light dark;
+}
+
+/* Follows the OS/browser color scheme. This only affects the on-screen
+   app UI - exported/saved files (HTML/RTF/MD/plain text) always render
+   with the light palette, regardless of this setting. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181d;
+    --panel: #1d2026;
+    --panel-alt: #22252c;
+    --text: #e5e7eb;
+    --muted: #9aa3b2;
+    --border: #343841;
+
+    --accent: #5b9dff;
+    --accent-soft: #22314f;
+
+    --warning-bg: #3a2f0d;
+    --warning-border: #caa03a;
+    --error-bg: #3a1e1c;
+    --error-border: #e0716a;
+
+    --table-bg: #000000;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
 }
 
 * {
@@ -45,7 +70,7 @@ input {
 
 button {
   border: 1px solid var(--border);
-  background: #ffffff;
+  background: var(--panel);
   color: var(--text);
   padding: 0.4rem 0.7rem;
   border-radius: 6px;
@@ -133,7 +158,7 @@ section.panel h2 {
   justify-content: center;
   gap: 0.15rem;
   min-width: 130px;
-  padding: 0.55rem 0.7rem;
+  padding: 0.55rem 1.6rem 0.55rem 0.7rem;
   border: 1.5px dashed var(--border);
   border-radius: 8px;
   background: var(--panel-alt);
@@ -156,7 +181,7 @@ section.panel h2 {
 .slot .slot-label {
   font-size: 0.88rem;
   font-weight: 600;
-  max-width: 14rem;
+  max-width: 12rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -193,26 +218,42 @@ section.panel h2 {
   box-shadow: 0 0 0 2px var(--accent) inset;
 }
 
-.slot-clear {
+.load-row .slot-clear {
   position: absolute;
-  top: -7px;
-  right: -7px;
-  width: 1.3rem;
-  height: 1.3rem;
+  top: 0.3rem;
+  right: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
   min-width: 0;
+  max-width: 1.1rem;
   padding: 0;
+  margin: 0;
   line-height: 1;
-  border-radius: 50%;
   border: 1px solid var(--border);
-  background: #fff;
-  color: var(--muted);
-  font-size: 0.85rem;
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  opacity: 0.85;
+  z-index: 1;
+  transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
 }
 
-.slot-clear:hover {
-  border-color: var(--error-border);
-  color: var(--error-border);
-  background: var(--error-bg);
+.load-row .slot-clear:hover {
+  color: #fff;
+  background: #d64545;
+  border-color: #d64545;
+  opacity: 1;
+}
+
+.load-row .slot-clear:focus-visible {
+  opacity: 1;
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .option-row label {
@@ -277,19 +318,29 @@ table.tm-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
+  background: var(--table-bg);
 }
 
 table.tm-table th,
 table.tm-table td {
-  border: 1px solid var(--border);
-  padding: 0.32rem 0.5rem;
+  border: none;
+  padding: 0.34rem 0.5rem;
   vertical-align: top;
   text-align: left;
 }
 
 table.tm-table thead th {
-  background: var(--table-head);
   font-weight: 600;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+table.tm-table tbody tr.tm-row-first td {
+  border-top: 1px solid var(--border);
+}
+
+table.tm-table tbody tr.tm-row-last td {
+  border-bottom: 1px solid var(--border);
 }
 
 table.tm-table td:first-child {
