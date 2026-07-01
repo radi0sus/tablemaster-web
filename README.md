@@ -21,6 +21,7 @@ TableMaster Web is a client-side JavaScript port of the PureBasic desktop applic
   - **Plain text** (fixed-width table)
 - Copy-to-clipboard shortcuts for formatted text (paste into Word etc.), Markdown, and plain text — no need to save a file first.
 - Drag-and-drop or click-to-browse loading for each CIF slot, with a clear ("×") button per slot and a "Clear all" button.
+- **Multi-block CIF support**: if a `.cif` file contains several structures (e.g. Acta E "sup1" files with one structure per compound), a picker dialog lets you choose which structures to load, capped at the number of free slots. Files with only one structure load directly, no dialog.
 - Runs from `file://` — no local web server required, no external dependencies, no data sent anywhere.
 
 ## Getting started
@@ -40,10 +41,11 @@ Either way, everything runs client-side in plain JavaScript — no server requir
 ## Usage
 
 1. **Load CIFs** – In the *Load* section, click a slot ("Load CIF 1" … "Load CIF 5") to browse for a `.cif` file, or drag and drop a file directly onto a slot. Slots activate left to right; you don't need to fill all five.
-2. **Remove a CIF** – Hover over a loaded slot and click the small **×** in the top-right corner to clear that slot, or use **Clear all** to reset everything.
-3. **Set options** – In the *Options* section, choose which optional rows to include (temperature, moiety formula, SI-style units) and, for RTF export, the page orientation.
-4. **Preview** – The *Preview* section shows a live rendering of the combined table as soon as at least one CIF is loaded. Any parsing issues or missing data are shown in a warnings box above the preview.
-5. **Copy or save** – Use the *Copy* section to copy the table directly to your clipboard (formatted for pasting into Word, as Markdown, or as plain text), or use the *Save* section to download the table as an `.rtf`, `.html`, `.md`, or `.txt` file.
+2. **Multi-block CIFs** – If the loaded file contains more than one structure (data block), a dialog opens listing each block with its formula. Check the ones you want (in the order you want them, left slot first), up to the number of free slots — checking "Select all" selects as many as fit. Files with only one structure skip this dialog entirely.
+3. **Remove a CIF** – Hover over a loaded slot and click the small **×** in the top-right corner to clear that slot, or use **Clear all** to reset everything.
+4. **Set options** – In the *Options* section, choose which optional rows to include (temperature, moiety formula, SI-style units) and, for RTF export, the page orientation.
+5. **Preview** – The *Preview* section shows a live rendering of the combined table as soon as at least one CIF is loaded. Any parsing issues or missing data are shown in a warnings box above the preview.
+6. **Copy or save** – Use the *Copy* section to copy the table directly to your clipboard (formatted for pasting into Word, as Markdown, or as plain text), or use the *Save* section to download the table as an `.rtf`, `.html`, `.md`, or `.txt` file.
 
 ## Table content
 
@@ -69,7 +71,7 @@ static/js/format-helpers.js   Value cleanup, unit formatting, typographic helper
 static/js/cif-store.js        In-memory store for loaded CIF slots
 static/js/table-model.js      Builds the row/column data model from parsed CIFs
 static/js/formatters.js       Renders the data model to RTF / HTML / Markdown / plain text
-static/js/app.js              UI wiring: slots, drag & drop, options, preview, copy/save
+static/js/app.js              UI wiring: slots, drag & drop, multi-block picker, options, preview, copy/save
 ```
 
 ## Browser support

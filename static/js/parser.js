@@ -341,12 +341,6 @@
       block.loopByHeader = makeLoopIndex(block.loops);
     });
 
-    function looksLikeStructureBlock(block) {
-      var hasCell = !!block.items._cell_length_a;
-      var hasAtoms = !!block.loopByHeader._atom_site_label;
-      return hasCell && hasAtoms;
-    }
-
     var structureBlocks = blocks.filter(looksLikeStructureBlock);
     var primary = structureBlocks.length ? structureBlocks[0] : (blocks[0] || null);
 
@@ -379,9 +373,20 @@
     return result;
   }
 
+  // A block "looks like" a real crystal structure (as opposed to e.g. a
+  // data_global bookkeeping block) if it has both cell parameters and an
+  // atom site loop. Exported so callers can filter/count structure blocks
+  // in a multi-block CIF without re-parsing the whole file.
+  function looksLikeStructureBlock(block) {
+    var hasCell = !!(block.items && block.items._cell_length_a);
+    var hasAtoms = !!(block.loopByHeader && block.loopByHeader._atom_site_label);
+    return hasCell && hasAtoms;
+  }
+
   CIFLord.Parser = {
     parse: parse,
     findLoopContaining: findLoopContaining,
-    tokenizeLine: tokenizeLine
+    tokenizeLine: tokenizeLine,
+    looksLikeStructureBlock: looksLikeStructureBlock
   };
 })();

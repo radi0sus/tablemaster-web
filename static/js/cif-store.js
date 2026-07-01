@@ -43,6 +43,21 @@
     return slot;
   }
 
+  // Loads one already-selected block (from a multi-block CIF the user
+  // picked structures from) directly into a slot, bypassing re-parsing.
+  function loadBlockIntoSlot(store, slotIndex, fileName, block) {
+    var slot = {
+      loaded: true,
+      fileName: fileName,
+      dataName: block.dataName || "",
+      items: block.items || {},
+      warnings: []
+    };
+
+    store.slots[slotIndex] = slot;
+    return slot;
+  }
+
   function clearSlot(store, slotIndex) {
     store.slots[slotIndex] = emptySlot();
   }
@@ -72,6 +87,7 @@
     MAX_SLOTS: MAX_SLOTS,
     createStore: createStore,
     loadIntoSlot: loadIntoSlot,
+    loadBlockIntoSlot: loadBlockIntoSlot,
     clearSlot: clearSlot,
     clearAll: clearAll,
     loadedSlots: loadedSlots,

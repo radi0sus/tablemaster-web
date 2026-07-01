@@ -130,39 +130,206 @@
     renderPreview();
   }
 
+  // -- Multi-block CIF picker ----------------------------------------------
+  //
+  // A single .cif file can contain several structures (data_ blocks), e.g.
+  // Acta E "sup1" files with one data_global block plus one block per
+  // structure. When that happens we ask the user which structures to load,
+  // instead of silently picking the first one.
+
+  var blockPicker = {
+    overlay: null,
+    list: null,
+    limitLabel: null,
+    resolve: null
+  };
+
+  function initBlockPicker() {
+    blockPicker.overlay = $("block-picker-overlay");
+    blockPicker.list = $("block-picker-list");
+    blockPicker.limitLabel = $("block-picker-limit");
+
+    $("block-picker-select-all").addEventListener("click", function () {
+      setPickerChecks(true);
+
+      var total = blockPicker.list.querySelectorAll("input[type=checkbox]").length;
+      var max = parseInt(blockPicker.overlay.getAttribute("data-max-selectable"), 10) || total;
+
+      if (max < total) {
+        showToast("Only " + max + " free slot" + (max === 1 ? "" : "s") + " — selected first " + max + " of " + total, "warning");
+      }
+    });
+    $("block-picker-select-none").addEventListener("click", function () {
+      setPickerChecks(false);
+    });
+    $("block-picker-cancel").addEventListener("click", function () {
+      closeBlockPicker([]);
+    });
+    $("block-picker-confirm").addEventListener("click", function () {
+      var chosen = Array.prototype.slice
+        .call(blockPicker.list.querySelectorAll("input[type=checkbox]:checked"))
+        .map(function (cb) { return parseInt(cb.value, 10); });
+      closeBlockPicker(chosen);
+    });
+    blockPicker.overlay.addEventListener("click", function (e) {
+      if (e.target === blockPicker.overlay) closeBlockPicker([]);
+    });
+  }
+
+  function setPickerChecks(checked) {
+    var boxes = Array.prototype.slice.call(blockPicker.list.querySelectorAll("input[type=checkbox]"));
+    var max = parseInt(blockPicker.overlay.getAttribute("data-max-selectable"), 10) || boxes.length;
+
+    boxes.forEach(function (cb, i) {
+      cb.checked = checked && i < max;
+    });
+
+    updatePickerLimitState();
+  }
+
+  // Once the max-selectable count (= number of free slots) is reached,
+  // remaining unchecked boxes are disabled so the user can't overbook slots.
+  function updatePickerLimitState() {
+    var boxes = blockPicker.list.querySelectorAll("input[type=checkbox]");
+    var checkedCount = blockPicker.list.querySelectorAll("input[type=checkbox]:checked").length;
+    var max = parseInt(blockPicker.overlay.getAttribute("data-max-selectable"), 10) || boxes.length;
+
+    Array.prototype.forEach.call(boxes, function (cb) {
+      cb.disabled = !cb.checked && checkedCount >= max;
+    });
+
+    $("block-picker-confirm").disabled = checkedCount === 0;
+  }
+
+  function blockSummary(block) {
+    var formula = block.items._chemical_formula_sum || block.items._chemical_formula_moiety || "";
+    return formula ? formula.replace(/^'+|'+$/g, "") : "(no formula found)";
+  }
+
+  // Shows the picker and resolves with the block indices the user checked,
+  // in the order they were checked (so click order controls slot order).
+  function askUserToPickBlocks(blocks, maxSelectable) {
+    return new Promise(function (resolve) {
+      blockPicker.resolve = resolve;
+      blockPicker.overlay.setAttribute("data-max-selectable", String(maxSelectable));
+      blockPicker.limitLabel.textContent = "up to " + maxSelectable + " of " + blocks.length;
+
+      blockPicker.list.innerHTML = blocks.map(function (block, i) {
+        return (
+          '<label class="block-picker-item">' +
+            '<input type="checkbox" value="' + i + '">' +
+            '<span class="block-picker-name">' +
+              Format.escapeHtml(block.dataName || ("block " + (i + 1))) +
+            "</span>" +
+            '<span class="block-picker-formula">' +
+              Format.escapeHtml(blockSummary(block)) +
+            "</span>" +
+          "</label>"
+        );
+      }).join("");
+
+      Array.prototype.forEach.call(
+        blockPicker.list.querySelectorAll("input[type=checkbox]"),
+        function (cb) { cb.addEventListener("change", updatePickerLimitState); }
+      );
+
+      updatePickerLimitState();
+      blockPicker.overlay.classList.remove("hidden");
+    });
+  }
+
+  function closeBlockPicker(chosenIndices) {
+    blockPicker.overlay.classList.add("hidden");
+    var resolve = blockPicker.resolve;
+    blockPicker.resolve = null;
+    if (resolve) resolve(chosenIndices);
+  }
+
   // -- File loading ----------------------------------------------------
 
   function slotEnabled(index) {
     return index === 0 || store.slots[index - 1].loaded;
   }
 
-  function loadFileIntoSlot(index, file) {
+  function freeSlotIndicesFrom(startIndex) {
+    var indices = [];
+    for (var i = startIndex; i < store.maxSlots; i++) {
+      if (!store.slots[i].loaded) indices.push(i);
+    }
+    return indices;
+  }
+
+  // Reads and loads one file starting at `startIndex`. Calls `done()` when
+  // finished (loaded, skipped, or cancelled) so a caller can chain the next
+  // file in a drop batch. Handles both the plain single-structure case and
+  // the multi-block picker case.
+  function handleFile(file, startIndex, done) {
     var reader = new FileReader();
 
     reader.onload = function () {
+      var text = String(reader.result || "");
+      var parsed;
+
       try {
-        var slot = Store.loadIntoSlot(store, index, file.name, String(reader.result || ""));
+        parsed = window.CIFLord.Parser.parse(text);
+      } catch (e) {
+        showToast("Could not parse " + file.name, "error");
+        done();
+        return;
+      }
+
+      var structureBlocks = (parsed.blocks || []).filter(window.CIFLord.Parser.looksLikeStructureBlock);
+
+      if (structureBlocks.length <= 1) {
+        var slot = Store.loadIntoSlot(store, startIndex, file.name, text);
 
         if (!slot.dataName) {
           showToast("No 'data_' block found in " + file.name, "warning");
         } else {
           showToast("Loaded " + slot.dataName);
         }
-      } catch (e) {
-        showToast("Could not parse " + file.name, "error");
+
+        renderAll();
+        done();
+        return;
       }
 
-      renderAll();
+      // Multiple structures in this one file: let the user pick which ones
+      // and how many, capped at the number of currently free slots.
+      var freeSlots = freeSlotIndicesFrom(startIndex);
+
+      askUserToPickBlocks(structureBlocks, freeSlots.length).then(function (chosenIndices) {
+        if (!chosenIndices.length) {
+          showToast("No structures selected from " + file.name, "warning");
+          done();
+          return;
+        }
+
+        chosenIndices.forEach(function (blockIdx, order) {
+          Store.loadBlockIntoSlot(store, freeSlots[order], file.name, structureBlocks[blockIdx]);
+        });
+
+        showToast(
+          "Loaded " + chosenIndices.length + " of " + structureBlocks.length +
+          " structures from " + file.name
+        );
+
+        renderAll();
+        done();
+      });
     };
+
     reader.onerror = function () {
       showToast("Could not read " + file.name, "error");
+      done();
     };
+
     reader.readAsText(file);
   }
 
-  // Drops the given files starting at `startIndex`, cascading any extra
-  // files into the next free slots (so dropping several CIFs at once on
-  // slot 1 fills 1, 2, 3, ... in one go).
+  // Processes several dropped files one after another (so the picker never
+  // has to handle more than one file at a time), cascading each into the
+  // next free slot after startIndex.
   function loadFilesCascading(files, startIndex) {
     var cifFiles = Array.prototype.filter.call(files, function (f) {
       return /\.cif$/i.test(f.name);
@@ -173,21 +340,29 @@
       return;
     }
 
-    var index = startIndex;
+    var queuePos = 0;
+    var slotIndex = startIndex;
 
-    cifFiles.forEach(function (file) {
-      while (index < store.maxSlots && store.slots[index].loaded) {
-        index++;
+    function next() {
+      if (queuePos >= cifFiles.length) return;
+
+      while (slotIndex < store.maxSlots && store.slots[slotIndex].loaded) {
+        slotIndex++;
       }
 
-      if (index >= store.maxSlots) {
+      if (slotIndex >= store.maxSlots) {
         showToast("Only " + store.maxSlots + " structures supported", "warning");
         return;
       }
 
-      loadFileIntoSlot(index, file);
-      index++;
-    });
+      var file = cifFiles[queuePos++];
+
+      handleFile(file, slotIndex, function () {
+        next();
+      });
+    }
+
+    next();
   }
 
   function bindLoadButtons() {
@@ -213,7 +388,7 @@
 
         input.addEventListener("change", function () {
           var file = input.files && input.files[0];
-          if (file) loadFileIntoSlot(index, file);
+          if (file) handleFile(file, index, function () {});
         });
 
         card.addEventListener("dragover", function (e) {
@@ -360,6 +535,7 @@
   // -- Init ----------------------------------------------------------------
 
   document.addEventListener("DOMContentLoaded", function () {
+    initBlockPicker();
     bindLoadButtons();
     bindClearAll();
     bindOptions();
